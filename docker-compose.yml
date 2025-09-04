@@ -1,0 +1,49 @@
+services:
+  db:
+    image: postgres:14
+    restart: always
+    environment:
+      POSTGRES_DB: basicdb
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+    deploy:
+      resources:
+        limits:
+          memory: 250M
+    ports:
+      - "5432:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+      - ./backend/init.sql:/docker-entrypoint-initdb.d/init.sql
+
+  backend:
+    build: ./backend
+    environment:
+      - DATABASE_URL=postgres://user:password@db:5432/basicdb
+      - JWT_SECRET=your_jwt_secret
+    deploy:
+      resources:
+        limits:
+          memory: 100M
+    ports:
+      - "4000:4000"
+    depends_on:
+      - db
+    restart: always
+
+  frontend:
+    build: ./frontend
+    environment:
+      - CHOKIDAR_USEPOLLING=true
+    deploy:
+      resources:
+        limits:
+          memory: 500M
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    restart: always
+
+volumes:
+  db_data:
